@@ -359,4 +359,9 @@ $('bk-file').onchange = async e => {
 $('f-date').value = todayISO();
 renderProducts(); updateNet(); getAssets().catch(() => {});
 setTimeout(() => syncAll(), 1500);
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  const hadSW = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => reg.update()).catch(() => {});
+  // When a new version installs, reload once so the new screens show straight away.
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadSW && !window.__reloaded) { window.__reloaded = true; location.reload(); } });
+}
