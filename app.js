@@ -22,7 +22,8 @@ const S = {
   url: store.get('ev_url', ''),
   design: store.get('ev_design', 'brand'),
   records: store.get('ev_records', []),
-  rkey: store.get('ev_rkey', '') // secret that links this phone to your Google script
+  rkey: store.get('ev_rkey', ''), // secret that links this phone to your Google script
+  delQueue: store.get('ev_del_queue', []) // invoices deleted on the phone, still to remove from the Google Sheet
 };
 if (!S.rkey) { const b = new Uint8Array(18); crypto.getRandomValues(b); S.rkey = [...b].map(x => x.toString(16).padStart(2, '0')).join(''); store.set('ev_rkey', S.rkey); }
 const saveRecords = () => store.set('ev_records', S.records);
@@ -260,11 +261,30 @@ function renderRecords() {
       <span class="dot ${r.synced ? 'ok' : ''}" title="${r.synced ? 'Backed up' : 'Waiting for internet'}"></span>
       <div class="i"><div class="t">${esc(r.name)} · ₹${money(r.total)}</div>
       <div class="s">${esc(r.invoice)} · ${dmy(r.date)} · ${esc(r.promo)}</div></div>
-      <button class="ghost" data-a="read" data-i="${esc(r.invoice)}">Reader</button>
-      <button class="ghost" data-a="share" data-i="${esc(r.invoice)}">Share</button>
-      <button class="ghost" data-a="dl" data-i="${esc(r.invoice)}">PDF</button>
+      <div class="acts">
+        <button class="ghost" data-a="read" data-i="${esc(r.invoice)}">Reader</button>
+        <button class="ghost" data-a="share" data-i="${esc(r.invoice)}">Share</button>
+        <button class="ghost" data-a="dl" data-i="${esc(r.invoice)}">PDF</button>
+        <button class="ghost del" data-a="del" data-i="${esc(r.invoice)}" aria-label="Delete">Delete</button>
+      </div>
     </div>`).join('') : '<p class="small">No invoices yet.</p>';
-  $('r-list').querySelectorAll('button').forEach(b => b.onclick = () => (b.dataset.a === 'read' ? Reader.openManage : b.dataset.a === 'dl' ? downloadPdf : sharePdf)(recBy(b.dataset.i)));
+  $('r-list').querySelectorAll('button').forEach(b => b.onclick = () => ({ read: Reader.openManage, dl: downloadPdf, share: sharePdf, del: deleteRecord }[b.dataset.a])(recBy(b.dataset.i)));
+}
+/* Delete an invoice: from this phone, from the Google Sheet, and stop the person's reader link
+   (only when it was their last invoice). */
+function deleteRecord(r) {
+  if (!r) return;
+  const email = r.email.toLowerCase();
+  const others = S.records.filter(x => x !== r && x.email.toLowerCase() === email).length;
+  const msg = `Delete invoice ${r.invoice} for ${r.name}?\n\n` +
+    `It is removed from this phone${r.synced ? ' and from your Google Sheet' : ''}.\n` +
+    (others ? `${r.name} has ${others} other invoice(s), so their PDF reader link keeps working.` : `Their PDF reader link stops working.`) +
+    `\n\nThis cannot be undone.`;
+  if (!confirm(msg)) return;
+  S.records = S.records.filter(x => x !== r); saveRecords();
+  if (r.synced) { S.delQueue.push(r.invoice); store.set('ev_del_queue', S.delQueue); }
+  if (!others && window.Reader) Reader.revoke(email);
+  renderRecords(); updateNet(); toast('Deleted ✓'); syncAll();
 }
 $('r-q').oninput = renderRecords;
 
@@ -291,6 +311,11 @@ async function syncAll(manual) {
       } catch (e) { failed = e.message; break; }
     }
     if (!failed && window.Reader) { try { await Reader.syncAccess(); } catch (e) { failed = e.message; } }
+    while (!failed && S.delQueue.length) {
+      try { await post({ action: 'deleteInvoice', invoice: S.delQueue[0] }); }
+      catch (e) { if (!/Unknown action/.test(e.message)) { failed = e.message; break; } } // old script: keep the sheet row
+      S.delQueue.shift(); store.set('ev_del_queue', S.delQueue);
+    }
   } finally { syncing = false; updateNet(); if ($('v-rec').classList.contains('on')) renderRecords(); }
   if (manual || done) toast(failed ? 'Backup stopped: ' + failed : done ? `Backed up ${done} invoice(s) to Drive ✓` : 'Everything is already backed up ✓');
 }

@@ -1,6 +1,6 @@
 /* Offline cache for EduVerse Invoice. Bump VERSION when files change.
    Online: always loads the newest files (so updates show at once). Offline: uses the saved copy. */
-const VERSION = 'ev-invoice-v8';
+const VERSION = 'ev-invoice-v9';
 const FILES = ['./', 'index.html', 'app.js', 'reader.js', 'jspdf.umd.min.js', 'xlsx.mini.min.js', 'template.jpg', 'pdf-icon.png', 'logo.png', 'template-pro.js', 'template-pass.js', 'template-brand.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png',
   'fonts/poppins-500.woff2', 'fonts/poppins-600.woff2', 'fonts/poppins-700.woff2', 'fonts/guj-600.woff2', 'fonts/guj-700.woff2'];

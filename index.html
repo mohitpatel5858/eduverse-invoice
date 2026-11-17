@@ -73,7 +73,10 @@ nav button.on{color:var(--navy)}
 #rd-modal[hidden]{display:none}
 #rd-modal .sheet{background:#fff;width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
 #rd-modal h2{font-size:16px;margin:0 0 2px;color:var(--navy)}
-.rec .i+button{margin-left:auto}
+.rec{flex-wrap:wrap}
+.rec .acts{display:flex;gap:6px;width:100%;padding-left:19px}
+.rec .acts button{flex:1;padding:8px 4px}
+.rec .acts .del{color:var(--bad);background:#fbeaea}
 </style>
 </head>
 <body>

@@ -54,7 +54,7 @@
     const a = S.access[code];
     a.books = [...new Set([...a.books, ...pick])];
     a.name = rec.name; a.invoice = a.invoice && !a.invoice.split(', ').includes(rec.invoice) ? a.invoice + ', ' + rec.invoice : (a.invoice || rec.invoice);
-    a.dirty = true; saveAccess();
+    a.dirty = true; a.revoked = false; saveAccess();
     return code;
   }
   function resetForm() { pick.clear(); renderPicker(); }
@@ -93,9 +93,14 @@
   async function syncAccess() {
     for (const code of Object.keys(S.access).filter(c => S.access[c].dirty)) {
       const a = S.access[code];
-      await post({ action: 'grant', code, email: a.email, name: a.name, invoice: a.invoice, books: a.books });
+      await post({ action: 'grant', code, email: a.email, name: a.name, invoice: a.invoice, books: a.books, active: !a.revoked });
       a.dirty = false; saveAccess();
     }
+  }
+  // Stop a person's reader link (their last invoice was deleted)
+  function revoke(email) {
+    const code = codeFor(email); if (!code) return;
+    const a = S.access[code]; a.books = []; a.revoked = true; a.dirty = true; saveAccess();
   }
   const pendingAccess = () => Object.values(S.access).filter(a => a.dirty).length;
 
@@ -129,7 +134,7 @@
         code = newCode(); S.access[code] = { email, name: rec.name, invoice: rec.invoice, books: [] };
         S.records.filter(r => r.email.toLowerCase() === email && !r.readCode).forEach(r => r.readCode = code); saveRecords();
       }
-      S.access[code].books = [...books, ...keepUnknown]; S.access[code].dirty = true; saveAccess();
+      S.access[code].books = [...books, ...keepUnknown]; S.access[code].dirty = true; S.access[code].revoked = false; saveAccess();
       $('rd-link').textContent = 'Link: ' + link(code); $('rd-share').disabled = false;
       toast(navigator.onLine && S.url ? 'Saved ✓ Updating Drive…' : 'Saved ✓ Will update Drive when online');
       syncAll();
@@ -250,7 +255,7 @@
     S.rkey = k; store.set('ev_rkey', k); toast('Phone linked ✓'); refresh();
   };
 
-  window.Reader = { linkFor, drawPdfButton, attach, resetForm, shareText, syncAccess, pendingAccess, openManage, refresh, renderSettingsCard, renderPicker };
+  window.Reader = { revoke, linkFor, drawPdfButton, attach, resetForm, shareText, syncAccess, pendingAccess, openManage, refresh, renderSettingsCard, renderPicker };
   renderPicker();
   setTimeout(() => refresh(true), 2500);
 })();
