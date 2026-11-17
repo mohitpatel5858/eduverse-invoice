@@ -69,6 +69,11 @@ nav button.on{color:var(--navy)}
 #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:90vw;text-align:center}
 #toast.on{opacity:1}
 .pe{display:grid;grid-template-columns:1fr 90px;gap:8px;margin-bottom:8px}
+#rd-modal{position:fixed;inset:0;background:#0c2a5066;z-index:8;display:flex;align-items:flex-end;justify-content:center}
+#rd-modal[hidden]{display:none}
+#rd-modal .sheet{background:#fff;width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+#rd-modal h2{font-size:16px;margin:0 0 2px;color:var(--navy)}
+.rec .i+button{margin-left:auto}
 </style>
 </head>
 <body>
@@ -96,6 +101,7 @@ nav button.on{color:var(--navy)}
     <div class="card">
       <h2>Which PDF was sold?</h2>
       <div id="prods"></div>
+      <div id="rd-pick"></div>
       <div class="total"><span>Total paid</span><b id="f-total">₹ 0.00</b></div>
       <div class="err" id="f-err"></div>
       <button class="primary" id="b-gen">Generate invoice</button>
@@ -143,6 +149,25 @@ nav button.on{color:var(--navy)}
       <div class="small" id="g-msg" style="margin-top:8px"></div>
     </div>
     <div class="card">
+      <h2>Customer reader (protected PDFs)</h2>
+      <p class="small">Customers read these PDFs online with their personal link. No download, no print, and every page shows their name and email. Your PDFs stay private in your Google Drive.</p>
+      <div id="rd-lib"></div>
+      <label for="rd-file">Add a PDF</label>
+      <input id="rd-file" type="file" accept="application/pdf,.pdf">
+      <label for="rd-title">Name customers will see</label>
+      <input id="rd-title" placeholder="e.g. Master All in One PDF">
+      <div class="btns">
+        <button class="primary" id="rd-up">Add to reader</button>
+        <button class="ghost" id="rd-refresh">Refresh list</button>
+      </div>
+      <div class="small" id="rd-msg" style="margin-top:8px"></div>
+      <details style="margin-top:10px"><summary class="small">Reader key (for a second phone)</summary>
+        <p class="small">This secret links the app to your Google script. To use a second phone, copy this key into the same box there and tap Link. Keep it private.</p>
+        <input id="rd-key" autocomplete="off" spellcheck="false">
+        <button class="ghost" id="rd-link-phone" style="margin-top:8px;width:100%">Link this phone</button>
+      </details>
+    </div>
+    <div class="card">
       <h2>Invoice design</h2>
       <select id="d-sel"><option value="brand">Brand Edge (navy &amp; gold)</option><option value="pass:sunrise">Modern · Sunrise (peach &amp; coral)</option><option value="pass:mint">Modern · Fresh Mint (teal &amp; green)</option><option value="pass:violet">Modern · Violet Pop (purple &amp; pink)</option><option value="pro">Professional (A4)</option><option value="classic">Classic (original template)</option></select>
     </div>
@@ -179,6 +204,7 @@ nav button.on{color:var(--navy)}
   <button data-v="v-set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
 </nav>
 <div id="toast"></div>
+<div id="rd-modal" hidden></div>
 
 <script src="jspdf.umd.min.js"></script>
 <script src="xlsx.mini.min.js"></script>
@@ -186,5 +212,6 @@ nav button.on{color:var(--navy)}
 <script src="template-pass.js"></script>
 <script src="template-brand.js"></script>
 <script src="app.js"></script>
+<script src="reader.js"></script>
 </body>
 </html>
