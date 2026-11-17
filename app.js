@@ -21,8 +21,10 @@ const S = {
   next: store.get('ev_next', 1),
   url: store.get('ev_url', ''),
   design: store.get('ev_design', 'brand'),
-  records: store.get('ev_records', [])
+  records: store.get('ev_records', []),
+  rkey: store.get('ev_rkey', '') // secret that links this phone to your Google script
 };
+if (!S.rkey) { const b = new Uint8Array(18); crypto.getRandomValues(b); S.rkey = [...b].map(x => x.toString(16).padStart(2, '0')).join(''); store.set('ev_rkey', S.rkey); }
 const saveRecords = () => store.set('ev_records', S.records);
 
 /* ---------- helpers ---------- */
@@ -98,6 +100,7 @@ $('b-gen').onclick = async () => {
     name, email, txn, items, subtotal: sub, discount: disc, total: sub - disc,
     promo: promoCode(), created: new Date().toISOString(), synced: false
   };
+  rec.readCode = window.Reader ? Reader.attach(rec) : '';
   $('b-gen').disabled = true;
   try {
     S.records.push(rec); S.next++;
@@ -114,7 +117,7 @@ $('b-gen').onclick = async () => {
 };
 $('pv-new').onclick = () => {
   ['f-name', 'f-email', 'f-txn'].forEach(i => $(i).value = ''); $('f-disc').value = 0;
-  sel.clear(); $('f-date').value = todayISO(); renderProducts();
+  sel.clear(); $('f-date').value = todayISO(); renderProducts(); if (window.Reader) Reader.resetForm();
   $('preview').hidden = true; window.scrollTo(0, 0); $('f-name').focus();
 };
 const recBy = inv => S.records.find(r => r.invoice === inv);
@@ -219,7 +222,7 @@ async function sharePdf(r) {
   const blob = (await makePdf(r)).output('blob');
   const file = new File([blob], pdfName(r), { type: 'application/pdf' });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: 'EduVerse Invoice ' + r.invoice, text: `Thank you for your purchase! Your promo code: ${r.promo}` }); }
+    try { await navigator.share({ files: [file], title: 'EduVerse Invoice ' + r.invoice, text: `Thank you for your purchase! Your promo code: ${r.promo}` + (window.Reader ? Reader.shareText(r) : '') }); }
     catch (e) { if (e.name !== 'AbortError') toast('Share failed: ' + e.message); }
   } else { downloadPdf(r); toast('Sharing not supported here, PDF downloaded instead.'); }
 }
@@ -254,17 +257,18 @@ function renderRecords() {
       <span class="dot ${r.synced ? 'ok' : ''}" title="${r.synced ? 'Backed up' : 'Waiting for internet'}"></span>
       <div class="i"><div class="t">${esc(r.name)} · ₹${money(r.total)}</div>
       <div class="s">${esc(r.invoice)} · ${dmy(r.date)} · ${esc(r.promo)}</div></div>
+      <button class="ghost" data-a="read" data-i="${esc(r.invoice)}">Reader</button>
       <button class="ghost" data-a="share" data-i="${esc(r.invoice)}">Share</button>
       <button class="ghost" data-a="dl" data-i="${esc(r.invoice)}">PDF</button>
     </div>`).join('') : '<p class="small">No invoices yet.</p>';
-  $('r-list').querySelectorAll('button').forEach(b => b.onclick = () => (b.dataset.a === 'dl' ? downloadPdf : sharePdf)(recBy(b.dataset.i)));
+  $('r-list').querySelectorAll('button').forEach(b => b.onclick = () => (b.dataset.a === 'read' ? Reader.openManage : b.dataset.a === 'dl' ? downloadPdf : sharePdf)(recBy(b.dataset.i)));
 }
 $('r-q').oninput = renderRecords;
 
 /* ---------- Google Drive backup (via Apps Script) ---------- */
 let syncing = false;
 async function post(payload) {
-  const res = await fetch(S.url, { method: 'POST', body: JSON.stringify(payload) }); // text/plain => no CORS preflight
+  const res = await fetch(S.url, { method: 'POST', body: JSON.stringify({ key: S.rkey, ...payload }) }); // text/plain => no CORS preflight
   const j = await res.json();
   if (!j.ok) throw new Error(j.error || 'Backup failed');
   return j;
@@ -283,12 +287,13 @@ async function syncAll(manual) {
         r.synced = true; saveRecords(); done++;
       } catch (e) { failed = e.message; break; }
     }
+    if (!failed && window.Reader) { try { await Reader.syncAccess(); } catch (e) { failed = e.message; } }
   } finally { syncing = false; updateNet(); if ($('v-rec').classList.contains('on')) renderRecords(); }
   if (manual || done) toast(failed ? 'Backup stopped: ' + failed : done ? `Backed up ${done} invoice(s) to Drive ✓` : 'Everything is already backed up ✓');
 }
 $('b-sync').onclick = () => syncAll(true);
 function updateNet() {
-  const pend = S.records.filter(r => !r.synced).length;
+  const pend = S.records.filter(r => !r.synced).length + (window.Reader ? Reader.pendingAccess() : 0);
   $('net').textContent = !navigator.onLine ? 'Offline' : !S.url ? 'Backup off' : syncing ? 'Backing up…' : pend ? pend + ' to back up' : 'Backed up ✓';
 }
 addEventListener('online', () => syncAll());
@@ -303,6 +308,7 @@ function renderSettings() {
     <div class="grp">${p.offer ? 'Offer price' : 'Regular price'}</div>
     <div class="pe"><input data-k="name" data-id="${p.id}" value="${esc(p.name)}"><input data-k="price" data-id="${p.id}" type="number" inputmode="decimal" value="${esc(p.price)}"></div>`).join('');
   $('p-offer').value = S.offerUntil; $('n-pre').value = S.prefix; $('n-next').value = S.next;
+  if (window.Reader) { Reader.renderSettingsCard(); Reader.refresh(true); }
 }
 $('g-save').onclick = () => {
   const u = $('g-url').value.trim();
@@ -329,7 +335,7 @@ $('n-save').onclick = () => {
   S.prefix = pre; S.next = nx; store.set('ev_prefix', pre); store.set('ev_next', nx); toast('Saved ✓');
 };
 $('bk-exp').onclick = () => {
-  const blob = new Blob([JSON.stringify({ v: 1, products: S.products, offerUntil: S.offerUntil, prefix: S.prefix, next: S.next, records: S.records }, null, 1)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify({ v: 1, products: S.products, offerUntil: S.offerUntil, prefix: S.prefix, next: S.next, records: S.records, access: S.access, rkey: S.rkey }, null, 1)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `EduVerse_backup_${todayISO()}.json`; a.click();
 };
 $('bk-imp').onclick = () => $('bk-file').click();
@@ -341,6 +347,8 @@ $('bk-file').onchange = async e => {
     S.records.sort((a, b) => a.created.localeCompare(b.created));
     if (d.products) S.products = d.products; if (d.offerUntil) S.offerUntil = d.offerUntil; if (d.prefix) S.prefix = d.prefix;
     S.next = Math.max(S.next, d.next || 1);
+    if (d.access) { S.access = { ...d.access, ...S.access }; store.set('ev_access', S.access); }
+    if (d.rkey) { S.rkey = d.rkey; store.set('ev_rkey', S.rkey); }
     saveRecords(); store.set('ev_products', S.products); store.set('ev_offer_until', S.offerUntil); store.set('ev_prefix', S.prefix); store.set('ev_next', S.next);
     renderSettings(); renderProducts(); toast(`Restored ${added} invoice(s) ✓`);
   } catch (err) { toast('Could not read that file.'); }
