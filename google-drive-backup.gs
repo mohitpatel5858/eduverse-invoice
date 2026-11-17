@@ -15,7 +15,7 @@
 const SHEET_NAME = 'EduVerse Invoices';
 const FOLDER_NAME = 'EduVerse Invoice PDFs';
 const LIB_FOLDER_NAME = 'EduVerse Reader Library (private)';
-const READER_VERSION = 2;
+const READER_VERSION = 3;
 const HEADERS = ['Invoice No', 'Date', 'Customer Name', 'Email ID', 'Transaction No', 'PDF(s) Sold',
   'Sub Total (₹)', 'Discount (₹)', 'Total Paid (₹)', 'Promo Code', 'Created At', 'PDF Link'];
 const ACC_TAB = 'Reader Access';
@@ -104,6 +104,7 @@ function doPost(e) {
     if (a === 'bookPage') return out_(bookPage_(body));
     if (a === 'bookFinish') return out_(withLock_(() => bookFinish_(body)));
     if (a === 'bookDelete') return out_(withLock_(() => bookDelete_(body)));
+    if (a === 'deleteInvoice') return out_(withLock_(() => deleteInvoice_(body)));
     return out_({ ok: false, error: 'Unknown action. Please paste the latest script and deploy a New version.' });
   } catch (err) {
     return out_({ ok: false, error: String(err && err.message || err) });
@@ -140,6 +141,8 @@ function grant_(body) {
       DEFAULT_MAX_DEVICES, '', 'YES', new Date(), '', 0]);
   } else {
     sh.getRange(row, A.TITLES, 1, 2).setValues([[titles, books.join(',')]]);
+    if (body.active === false) sh.getRange(row, A.ACTIVE).setValue('NO');
+    else if (body.active === true && books.length) sh.getRange(row, A.ACTIVE).setValue('YES');
     if (body.name) sh.getRange(row, A.NAME).setValue(body.name);
     if (body.email) sh.getRange(row, A.EMAIL).setValue(String(body.email).trim().toLowerCase());
     if (body.invoice) sh.getRange(row, A.INVOICE).setValue(body.invoice);
@@ -173,6 +176,14 @@ function bookFinish_(body) {
   const sh = tab_(LIB_TAB, LIB_HEADERS);
   if (!findRow_(sh, 1, body.bookId)) sh.appendRow([body.bookId, String(body.title).trim(), ids.length, new Date(), JSON.stringify(ids)]);
   return { ok: true, books: library_() };
+}
+
+// Remove an invoice row (deleted in the app). Its PDF stays in the "EduVerse Invoice PDFs" folder.
+function deleteInvoice_(body) {
+  const ss = getSheet_(), sh = ss.getSheetByName('Invoices') || ss.getSheets()[0];
+  const row = findRow_(sh, 1, body.invoice);
+  if (row) sh.deleteRow(row);
+  return { ok: true, deleted: !!row };
 }
 
 // Remove a PDF from the reader: hide it from every customer and move its page pictures to the Drive bin.

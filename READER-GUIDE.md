@@ -57,6 +57,10 @@ The link starts working as soon as the invoice is backed up to Drive (top-right 
 
 A new invoice for a customer who already has a link also reuses the same link.
 
+## Deleting a person
+
+In **Records**, tap **Delete** under the invoice. The app asks first. The invoice is removed from your phone and from the Google Sheet (its PDF stays in the Drive folder). If it was that person's last invoice, their reader link stops working.
+
 ## What the customer sees
 
 1. They tap the link. A Google page opens with a small grey note at the top ("This application was created by a Google Apps Script user"). That note is normal.
