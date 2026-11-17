@@ -20,7 +20,7 @@ const S = {
   prefix: store.get('ev_prefix', 'EV-' + new Date().getFullYear() + '-'),
   next: store.get('ev_next', 1),
   url: store.get('ev_url', ''),
-  design: store.get('ev_design', 'pass'),
+  design: store.get('ev_design', 'pass:sunrise'),
   records: store.get('ev_records', [])
 };
 const saveRecords = () => store.set('ev_records', S.records);
@@ -143,7 +143,7 @@ function rrect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.
 
 async function drawInvoice(r) {
   const a = await getAssets();
-  if (S.design === 'pass') return window.drawInvoicePass(r, a.logo);
+  if (S.design.startsWith('pass')) return window.drawInvoicePass(r, a.logo, S.design.split(':')[1]);
   if (S.design === 'pro') return window.drawInvoicePro(r, a.logo);
   return drawClassic(r, a);
 }
