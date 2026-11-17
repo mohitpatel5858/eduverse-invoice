@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EduVerse Invoice</title>
+<meta name="theme-color" content="#0c2a50">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+@font-face{font-family:Pop;src:url(fonts/poppins-500.woff2) format('woff2');font-weight:500}
+@font-face{font-family:Pop;src:url(fonts/poppins-600.woff2) format('woff2');font-weight:600}
+@font-face{font-family:Pop;src:url(fonts/poppins-700.woff2) format('woff2');font-weight:700}
+@font-face{font-family:Guj;src:url(fonts/guj-600.woff2) format('woff2');font-weight:500 600}
+@font-face{font-family:Guj;src:url(fonts/guj-700.woff2) format('woff2');font-weight:700}
+:root{--navy:#0c2a50;--navy2:#163d6e;--gold:#fcc73a;--bg:#f2f4f8;--card:#fff;--text:#14213d;--muted:#5d6b82;--line:#dde3ec;--ok:#16893a;--warn:#c97a00;--bad:#c0392b}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Pop,Guj,system-ui,sans-serif;font-weight:500;-webkit-tap-highlight-color:transparent}
+header{background:var(--navy);color:#fff;padding:14px 16px calc(12px);padding-top:max(14px,env(safe-area-inset-top));display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+header img{width:34px;height:34px;border-radius:8px}
+header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px}
+header h1 span{color:var(--gold)}
+#net{margin-left:auto;font-size:12px;padding:4px 10px;border-radius:20px;background:#ffffff22;white-space:nowrap}
+main{max-width:640px;margin:0 auto;padding:14px 16px 96px}
+.card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px #0c2a5014}
+.card h2{font-size:15px;margin:0 0 12px;color:var(--navy)}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input,select{width:100%;font:inherit;font-size:16px;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--text)}
+input:focus{outline:none;border-color:var(--navy2)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grp{font-size:12px;font-weight:600;color:var(--muted);margin:14px 0 6px;display:flex;gap:6px;align-items:center}
+.badge{font-size:11px;padding:2px 8px;border-radius:20px;background:#e9eef6;color:var(--navy2)}
+.badge.now{background:#fff1c7;color:#7a5600}
+.prod{display:flex;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer;user-select:none}
+.prod input{width:22px;height:22px;flex:none;accent-color:var(--navy)}
+.prod .nm{flex:1;color:var(--text);font-size:14px;line-height:1.35}
+.prod .pr{font-weight:700;font-size:17px;color:var(--navy)}
+.prod.on{border-color:var(--navy);background:#f3f7ff}
+.total{display:flex;justify-content:space-between;align-items:center;background:#fff8e1;border-radius:12px;padding:12px 14px;margin-top:12px;font-weight:600}
+.total b{font-size:22px;color:var(--navy)}
+button{font:inherit;font-weight:600;font-size:16px;border:0;border-radius:12px;padding:14px 16px;cursor:pointer}
+.primary{background:var(--navy);color:#fff;width:100%}
+.primary:disabled{opacity:.5}
+.gold{background:var(--gold);color:var(--navy)}
+.ghost{background:#e9eef6;color:var(--navy)}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.btns .full{grid-column:1/-1}
+.err{color:var(--bad);font-size:13px;margin-top:8px;min-height:1em}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;background:none;border-radius:0;padding:10px 4px 12px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button svg{width:22px;height:22px}
+nav button.on{color:var(--navy)}
+.view{display:none}.view.on{display:block}
+#preview img{width:100%;border-radius:10px;border:1px solid var(--line);display:block}
+.rec{border-bottom:1px solid var(--line);padding:12px 0;display:flex;gap:10px;align-items:center}
+.rec:last-child{border-bottom:0}
+.rec .i{flex:1;min-width:0}
+.rec .t{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec .s{font-size:12px;color:var(--muted)}
+.rec button{padding:9px 12px;font-size:13px}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--warn)}
+.dot.ok{background:var(--ok)}
+.small{font-size:13px;color:var(--muted);line-height:1.5}
+.stat{display:flex;gap:10px;margin-bottom:12px}
+.stat div{flex:1;background:#fff;border-radius:12px;padding:12px;text-align:center;box-shadow:0 1px 3px #0c2a5014}
+.stat b{display:block;font-size:20px;color:var(--navy)}
+.stat span{font-size:12px;color:var(--muted)}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+.pe{display:grid;grid-template-columns:1fr 90px;gap:8px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<header>
+  <img src="icons/icon-192.png" alt="">
+  <h1>Edu<span>Verse</span> Invoice</h1>
+  <div id="net">…</div>
+</header>
+<main>
+  <!-- NEW INVOICE -->
+  <section class="view on" id="v-new">
+    <div class="card">
+      <h2>Customer</h2>
+      <label for="f-name">Customer name</label>
+      <input id="f-name" autocomplete="off" placeholder="e.g. Patel Riya">
+      <label for="f-email">Email ID</label>
+      <input id="f-email" type="email" inputmode="email" autocomplete="off" placeholder="name@gmail.com">
+      <label for="f-txn">Transaction no.</label>
+      <input id="f-txn" autocomplete="off" placeholder="UPI / bank reference">
+      <div class="row2">
+        <div><label for="f-date">Date</label><input id="f-date" type="date"></div>
+        <div><label for="f-disc">Discount (₹)</label><input id="f-disc" type="number" inputmode="decimal" min="0" value="0"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Which PDF was sold?</h2>
+      <div id="prods"></div>
+      <div class="total"><span>Total paid</span><b id="f-total">₹ 0.00</b></div>
+      <div class="err" id="f-err"></div>
+      <button class="primary" id="b-gen">Generate invoice</button>
+    </div>
+    <div class="card" id="preview" hidden>
+      <h2 id="pv-title">Invoice ready</h2>
+      <img id="pv-img" alt="Invoice preview">
+      <div class="btns">
+        <button class="gold full" id="pv-share">Share PDF (WhatsApp / Email)</button>
+        <button class="ghost" id="pv-dl">Download PDF</button>
+        <button class="ghost" id="pv-new">New invoice</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECORDS -->
+  <section class="view" id="v-rec">
+    <div class="stat">
+      <div><b id="s-count">0</b><span>Invoices</span></div>
+      <div><b id="s-sum">₹0</b><span>Total sales</span></div>
+      <div><b id="s-pend">0</b><span>Not backed up</span></div>
+    </div>
+    <div class="card">
+      <div class="btns" style="margin-top:0">
+        <button class="gold" id="b-xlsx">Download Excel</button>
+        <button class="ghost" id="b-sync">Back up now</button>
+      </div>
+      <label for="r-q">Search</label>
+      <input id="r-q" placeholder="Name, email, invoice, promo code…">
+    </div>
+    <div class="card" id="r-list"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" id="v-set">
+    <div class="card">
+      <h2>Google Drive backup</h2>
+      <p class="small">Paste the Web app URL from your Google Apps Script here. Every invoice (PDF + Excel row) is then copied to your Drive automatically whenever the phone has internet.</p>
+      <label for="g-url">Backup URL</label>
+      <input id="g-url" placeholder="https://script.google.com/macros/s/…/exec">
+      <div class="btns">
+        <button class="primary" id="g-save">Save</button>
+        <button class="ghost" id="g-test">Test connection</button>
+      </div>
+      <div class="small" id="g-msg" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h2>PDF names and prices</h2>
+      <div id="p-edit"></div>
+      <label for="p-offer">Offer price valid until</label>
+      <input id="p-offer" type="date">
+      <button class="primary" id="p-save" style="margin-top:12px">Save prices</button>
+    </div>
+    <div class="card">
+      <h2>Invoice numbers</h2>
+      <div class="row2">
+        <div><label for="n-pre">Prefix</label><input id="n-pre"></div>
+        <div><label for="n-next">Next number</label><input id="n-next" type="number" min="1"></div>
+      </div>
+      <button class="primary" id="n-save" style="margin-top:12px">Save</button>
+    </div>
+    <div class="card">
+      <h2>Phone backup file</h2>
+      <p class="small">Extra safety: save all records as one file, or restore them on a new phone.</p>
+      <div class="btns">
+        <button class="ghost" id="bk-exp">Save backup file</button>
+        <button class="ghost" id="bk-imp">Restore from file</button>
+      </div>
+      <input type="file" id="bk-file" accept=".json,application/json" hidden>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button class="on" data-v="v-new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>New invoice</button>
+  <button data-v="v-rec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Records</button>
+  <button data-v="v-set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+</nav>
+<div id="toast"></div>
+
+<script src="jspdf.umd.min.js"></script>
+<script src="xlsx.mini.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
