@@ -59,6 +59,30 @@
   }
   function resetForm() { pick.clear(); renderPicker(); }
 
+  // Reader link for an invoice (only when the customer has PDFs and Drive backup is set up)
+  function linkFor(r) {
+    const a = r && r.readCode && S.access[r.readCode];
+    return a && a.books.length && S.url ? link(r.readCode) : '';
+  }
+  // Tappable "Open your PDFs" strip at the bottom of the invoice PDF
+  function drawPdfButton(pdf, url, r, w, y0, band) {
+    const a = S.access[r.readCode], u = w / 210;
+    pdf.setFillColor(12, 42, 80); pdf.rect(0, y0, w, band + 0.5, 'F');
+    const bw = 92 * u, bh = 13 * u, bx = 12 * u, by = y0 + (band - bh) / 2;
+    pdf.setFillColor(252, 199, 58); pdf.roundedRect(bx, by, bw, bh, bh / 2, bh / 2, 'F');
+    pdf.setTextColor(12, 42, 80); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15 * u);
+    pdf.text('OPEN YOUR PDFs  >', bx + bw / 2, by + bh / 2 + 1.9 * u, { align: 'center' });
+    pdf.link(bx, by, bw, bh, { url });
+    pdf.setTextColor(255, 255, 255); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10.5 * u);
+    const tx = bx + bw + 8 * u;
+    pdf.text('Read your notes online', tx, by + 4.6 * u);
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5 * u);
+    pdf.text('Sign in with: ' + a.email, tx, by + 9.2 * u, { maxWidth: w - tx - 6 * u });
+    pdf.setTextColor(252, 199, 58); pdf.setFontSize(7.5 * u);
+    pdf.text('Personal link - works on 2 devices only', tx, by + 13.2 * u);
+    pdf.link(tx, by, w - tx, bh, { url });
+  }
+
   function shareText(r) {
     const a = r.readCode && S.access[r.readCode];
     if (!a || !a.books.length || !S.url) return '';
@@ -133,10 +157,27 @@
   function renderSettingsCard(msg) {
     const box = $('rd-lib'); if (!box) return;
     box.innerHTML = S.library.length
-      ? S.library.map(b => `<div class="rec"><div class="i"><div class="t">${esc(b.title)}</div><div class="s">${b.pages} pages</div></div></div>`).join('')
+      ? S.library.map(b => `<div class="rec"><div class="i"><div class="t">${esc(b.title)}</div><div class="s">${b.pages} pages</div></div><button class="ghost" data-del="${esc(b.id)}">Delete</button></div>`).join('')
       : '<p class="small">No PDFs added yet.</p>';
+    box.querySelectorAll('[data-del]').forEach(btn => btn.onclick = () => removeBook(btn.dataset.del));
     if (msg != null) $('rd-msg').textContent = msg;
     $('rd-key').value = S.rkey;
+  }
+
+  async function removeBook(id) {
+    const b = S.library.find(x => x.id === id); if (!b) return;
+    const users = Object.values(S.access).filter(a => a.books.includes(id)).length;
+    if (!confirm(`Delete “${b.title}” from the reader?\n\n${users ? users + ' customer(s) will no longer see it. ' : ''}Its page pictures go to your Google Drive bin. Your original PDF on this phone is not touched.`)) return;
+    if (!S.url || !navigator.onLine) return toast('Needs internet.');
+    $('rd-msg').textContent = 'Deleting…';
+    try {
+      const j = await post({ action: 'bookDelete', bookId: id });
+      S.library = j.books; store.set('ev_library', S.library);
+      for (const a of Object.values(S.access)) a.books = a.books.filter(x => x !== id);
+      saveAccess(); renderSettingsCard(`“${b.title}” deleted ✓`); renderPicker();
+    } catch (e) {
+      renderSettingsCard(/Unknown action/.test(e.message) ? 'To delete, first update your Google script (paste the new script, Deploy > Manage deployments > Edit > New version).' : 'Could not delete: ' + e.message);
+    }
   }
 
   let pdfjsReady;
@@ -209,7 +250,7 @@
     S.rkey = k; store.set('ev_rkey', k); toast('Phone linked ✓'); refresh();
   };
 
-  window.Reader = { attach, resetForm, shareText, syncAccess, pendingAccess, openManage, refresh, renderSettingsCard, renderPicker };
+  window.Reader = { linkFor, drawPdfButton, attach, resetForm, shareText, syncAccess, pendingAccess, openManage, refresh, renderSettingsCard, renderPicker };
   renderPicker();
   setTimeout(() => refresh(true), 2500);
 })();
