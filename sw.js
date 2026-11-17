@@ -1,6 +1,6 @@
 /* Offline cache for EduVerse Invoice. Bump VERSION when files change. */
-const VERSION = 'ev-invoice-v1';
-const FILES = ['./', 'index.html', 'app.js', 'jspdf.umd.min.js', 'xlsx.mini.min.js', 'template.jpg', 'pdf-icon.png',
+const VERSION = 'ev-invoice-v2';
+const FILES = ['./', 'index.html', 'app.js', 'jspdf.umd.min.js', 'xlsx.mini.min.js', 'template.jpg', 'pdf-icon.png', 'logo.png', 'template-pro.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png',
   'fonts/poppins-500.woff2', 'fonts/poppins-600.woff2', 'fonts/poppins-700.woff2', 'fonts/guj-600.woff2', 'fonts/guj-700.woff2'];
 self.addEventListener('install', e => e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting())));

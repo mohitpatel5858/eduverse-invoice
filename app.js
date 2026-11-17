@@ -20,6 +20,7 @@ const S = {
   prefix: store.get('ev_prefix', 'EV-' + new Date().getFullYear() + '-'),
   next: store.get('ev_next', 1),
   url: store.get('ev_url', ''),
+  design: store.get('ev_design', 'pro'),
   records: store.get('ev_records', [])
 };
 const saveRecords = () => store.set('ev_records', S.records);
@@ -130,7 +131,7 @@ async function getAssets() {
   if (assets) return assets;
   const fonts = ['500 10px Pop', '600 10px Pop', '700 10px Pop', '600 10px Guj', '700 10px Guj'];
   await Promise.all(fonts.map(f => document.fonts.load(f, 'Aઅ₹').catch(() => {})));
-  assets = { bg: await loadImg('template.jpg'), icon: await loadImg('pdf-icon.png') };
+  assets = { bg: await loadImg('template.jpg'), icon: await loadImg('pdf-icon.png'), logo: await loadImg('logo.png') };
   return assets;
 }
 function fit(ctx, text, maxW, weight, size, family) {
@@ -141,7 +142,11 @@ function fit(ctx, text, maxW, weight, size, family) {
 function rrect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
 async function drawInvoice(r) {
-  const { bg, icon } = await getAssets();
+  const a = await getAssets();
+  if (S.design === 'pro') return window.drawInvoicePro(r, a.logo);
+  return drawClassic(r, a);
+}
+async function drawClassic(r, { bg, icon }) {
   const c = document.createElement('canvas'); c.width = bg.width * K; c.height = bg.height * K;
   const x = c.getContext('2d'); x.scale(K, K);
   x.drawImage(bg, 0, 0); x.textBaseline = 'alphabetic'; x.fillStyle = INK;
@@ -199,7 +204,7 @@ function pill(x, text, cx, cy, size, maxW) {
 async function makePdf(r) {
   const c = await drawInvoice(r);
   const { jsPDF } = window.jspdf;
-  const w = 148, h = w * c.height / c.width; // A5-ish width, keeps template ratio
+  const w = S.design === 'pro' ? 210 : 148, h = w * c.height / c.width; // pro = A4, classic keeps template ratio
   const pdf = new jsPDF({ unit: 'mm', format: [w, h], compress: true });
   pdf.addImage(c.toDataURL('image/jpeg', 0.88), 'JPEG', 0, 0, w, h, undefined, 'FAST');
   pdf.setProperties({ title: 'Invoice ' + r.invoice, author: 'EduVerse' });
@@ -291,7 +296,7 @@ setInterval(() => syncAll(), 5 * 60 * 1000);
 
 /* ---------- settings ---------- */
 function renderSettings() {
-  $('g-url').value = S.url;
+  $('g-url').value = S.url; $('d-sel').value = S.design;
   $('p-edit').innerHTML = S.products.map(p => `
     <div class="grp">${p.offer ? 'Offer price' : 'Regular price'}</div>
     <div class="pe"><input data-k="name" data-id="${p.id}" value="${esc(p.name)}"><input data-k="price" data-id="${p.id}" type="number" inputmode="decimal" value="${esc(p.price)}"></div>`).join('');
@@ -308,6 +313,7 @@ $('g-test').onclick = async () => {
   try { const old = S.url; S.url = u; const j = await post({ action: 'ping' }); S.url = old; $('g-msg').innerHTML = 'Connected ✓ Saving to: <a href="' + esc(j.sheetUrl) + '" target="_blank">your Google Sheet</a>'; }
   catch (e) { $('g-msg').textContent = 'Could not connect: ' + e.message + '. Check the URL and that access is set to "Anyone".'; }
 };
+$('d-sel').onchange = () => { S.design = $('d-sel').value; store.set('ev_design', S.design); toast('Invoice design saved ✓'); };
 $('p-save').onclick = () => {
   document.querySelectorAll('#p-edit input').forEach(i => { const p = S.products.find(p => p.id === i.dataset.id); p[i.dataset.k] = i.dataset.k === 'price' ? (+i.value || 0) : i.value.trim(); });
   S.offerUntil = $('p-offer').value || S.offerUntil;
