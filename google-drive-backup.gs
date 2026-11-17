@@ -377,15 +377,16 @@ function draw(el, src){
   img.onload = function(){
     var c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
     var x = c.getContext('2d'); x.drawImage(img, 0, 0);
-    var mark = S.name + ' · ' + S.email + ' · ' + CODE;
-    var fs = Math.round(c.width / 34);
-    x.save(); x.globalAlpha = 0.13; x.fillStyle = '#0c2a50'; x.font = '600 ' + fs + 'px sans-serif';
-    x.translate(c.width / 2, c.height / 2); x.rotate(-Math.PI / 6);
-    var w = x.measureText(mark).width + fs * 3;
-    for (var yy = -c.height; yy < c.height; yy += fs * 6) for (var xx = -c.width * 1.2 + ((yy / (fs * 6)) % 2) * w / 2; xx < c.width * 1.2; xx += w) x.fillText(mark, xx, yy);
+    // One light watermark per page, at a random place (name + email + code)
+    var fs = Math.round(c.width / 42), l1 = S.name + ' · ' + CODE, l2 = S.email;
+    x.save(); x.font = '600 ' + fs + 'px sans-serif';
+    var w = Math.max(x.measureText(l1).width, x.measureText(l2).width), m = fs * 2;
+    var px = m + w / 2 + Math.random() * Math.max(0, c.width - 2 * m - w);
+    var py = m + fs + Math.random() * Math.max(0, c.height - 2 * m - fs * 2.4);
+    x.translate(px, py); x.rotate((Math.random() * 30 - 15) * Math.PI / 180);
+    x.globalAlpha = 0.22; x.fillStyle = '#0c2a50'; x.textAlign = 'center';
+    x.fillText(l1, 0, 0); x.fillText(l2, 0, fs * 1.25);
     x.restore();
-    x.globalAlpha = 0.85; x.fillStyle = '#0c2a50'; x.font = '600 ' + Math.round(c.width / 60) + 'px sans-serif'; x.textAlign = 'center';
-    x.fillText('Licensed to ' + S.name + ' (' + S.email + ') · EduVerse · Sharing is not allowed', c.width / 2, c.height - c.width / 70);
     el.innerHTML = ''; el.appendChild(c); img.src = '';
   };
   img.src = src;
