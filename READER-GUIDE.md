@@ -45,7 +45,7 @@ The first time the updated app connects, it links itself to your script with a s
 
 1. Fill in the invoice as usual and tick **which PDF was sold**.
 2. Below that, under **PDFs they can read online**, tick the PDFs this customer should read.
-3. Tap **Generate invoice**, then **Share PDF**. The WhatsApp / email message now also contains the customer's **reader link**.
+3. Tap **Generate invoice**, then **Share PDF**. The invoice PDF now has a yellow **OPEN YOUR PDFs** button at the bottom, and the WhatsApp / email message also contains the link.
 
 The link starts working as soon as the invoice is backed up to Drive (top-right badge shows **Backed up ✓**).
 
@@ -72,7 +72,7 @@ Open your **EduVerse Invoices** Google Sheet. There are two new tabs:
   - Customer got a **new phone**: clear their **Device IDs** cell. They can then open it on 2 new devices.
   - Want to allow **more devices** for someone: change **Max Devices** (for example to 3).
   - Don't edit **Book IDs**: use the app's **Reader** button to change PDFs.
-- **Reader Library**: one row per PDF you added. To stop a PDF showing for everyone, delete its row (this can take up to 6 hours to apply).
+- **Reader Library**: one row per PDF you added. Don't edit it here: to remove a PDF, use **Delete** next to it in the app (Settings → Customer reader). It disappears for every customer, and its page pictures go to your Drive bin.
 
 ## Good to know
 

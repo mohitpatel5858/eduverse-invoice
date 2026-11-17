@@ -210,8 +210,11 @@ async function makePdf(r) {
   const c = await drawInvoice(r);
   const { jsPDF } = window.jspdf;
   const w = S.design !== 'classic' ? 210 : 148, h = w * c.height / c.width; // pro = A4, classic keeps template ratio
-  const pdf = new jsPDF({ unit: 'mm', format: [w, h], compress: true });
+  const link = window.Reader ? Reader.linkFor(r) : '';
+  const band = link ? w * 0.13 : 0; // extra strip under the invoice with the reader button
+  const pdf = new jsPDF({ unit: 'mm', format: [w, h + band], compress: true });
   pdf.addImage(c.toDataURL('image/jpeg', 0.88), 'JPEG', 0, 0, w, h, undefined, 'FAST');
+  if (link) Reader.drawPdfButton(pdf, link, r, w, h, band);
   pdf.setProperties({ title: 'Invoice ' + r.invoice, author: 'EduVerse' });
   return pdf;
 }

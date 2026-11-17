@@ -15,7 +15,7 @@
 const SHEET_NAME = 'EduVerse Invoices';
 const FOLDER_NAME = 'EduVerse Invoice PDFs';
 const LIB_FOLDER_NAME = 'EduVerse Reader Library (private)';
-const READER_VERSION = 1;
+const READER_VERSION = 2;
 const HEADERS = ['Invoice No', 'Date', 'Customer Name', 'Email ID', 'Transaction No', 'PDF(s) Sold',
   'Sub Total (₹)', 'Discount (₹)', 'Total Paid (₹)', 'Promo Code', 'Created At', 'PDF Link'];
 const ACC_TAB = 'Reader Access';
@@ -103,6 +103,7 @@ function doPost(e) {
     if (a === 'bookStart') return out_(bookStart_(body));
     if (a === 'bookPage') return out_(bookPage_(body));
     if (a === 'bookFinish') return out_(withLock_(() => bookFinish_(body)));
+    if (a === 'bookDelete') return out_(withLock_(() => bookDelete_(body)));
     return out_({ ok: false, error: 'Unknown action. Please paste the latest script and deploy a New version.' });
   } catch (err) {
     return out_({ ok: false, error: String(err && err.message || err) });
@@ -171,6 +172,15 @@ function bookFinish_(body) {
   if (!ids.length || ids.some(x => !x)) throw new Error('Some pages are missing');
   const sh = tab_(LIB_TAB, LIB_HEADERS);
   if (!findRow_(sh, 1, body.bookId)) sh.appendRow([body.bookId, String(body.title).trim(), ids.length, new Date(), JSON.stringify(ids)]);
+  return { ok: true, books: library_() };
+}
+
+// Remove a PDF from the reader: hide it from every customer and move its page pictures to the Drive bin.
+function bookDelete_(body) {
+  const sh = tab_(LIB_TAB, LIB_HEADERS), row = findRow_(sh, 1, body.bookId);
+  if (row) sh.deleteRow(row);
+  try { DriveApp.getFolderById(body.bookId).setTrashed(true); } catch (e) {}
+  CacheService.getScriptCache().remove('bk_' + body.bookId);
   return { ok: true, books: library_() };
 }
 
