@@ -20,7 +20,7 @@ const S = {
   prefix: store.get('ev_prefix', 'EV-' + new Date().getFullYear() + '-'),
   next: store.get('ev_next', 1),
   url: store.get('ev_url', ''),
-  design: store.get('ev_design', 'pro'),
+  design: store.get('ev_design', 'pass'),
   records: store.get('ev_records', [])
 };
 const saveRecords = () => store.set('ev_records', S.records);
@@ -143,6 +143,7 @@ function rrect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.
 
 async function drawInvoice(r) {
   const a = await getAssets();
+  if (S.design === 'pass') return window.drawInvoicePass(r, a.logo);
   if (S.design === 'pro') return window.drawInvoicePro(r, a.logo);
   return drawClassic(r, a);
 }
@@ -204,7 +205,7 @@ function pill(x, text, cx, cy, size, maxW) {
 async function makePdf(r) {
   const c = await drawInvoice(r);
   const { jsPDF } = window.jspdf;
-  const w = S.design === 'pro' ? 210 : 148, h = w * c.height / c.width; // pro = A4, classic keeps template ratio
+  const w = S.design !== 'classic' ? 210 : 148, h = w * c.height / c.width; // pro = A4, classic keeps template ratio
   const pdf = new jsPDF({ unit: 'mm', format: [w, h], compress: true });
   pdf.addImage(c.toDataURL('image/jpeg', 0.88), 'JPEG', 0, 0, w, h, undefined, 'FAST');
   pdf.setProperties({ title: 'Invoice ' + r.invoice, author: 'EduVerse' });
